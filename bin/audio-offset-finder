@@ -26,8 +26,8 @@ def main():
     )
     parser.add_argument('--find-offset-of', metavar='audio file', type=str, help='Find the offset of file')
     parser.add_argument('--within', metavar='audio file', type=str, help='Within file')
-    parser.add_argument('--sr', metavar='sample rate', type=int, default=8000, help='Target sample rate during downsampling')
-    parser.add_argument('--trim', metavar='seconds', type=int, default=60*15, help='Only uses first n seconds of audio files')
+    parser.add_argument('--sr', metavar='sample rate', type=int, default=16000, help='Target sample rate during downsampling')
+    parser.add_argument('--trim', metavar='seconds', type=int, default=60*30, help='Only uses first n seconds of audio files')
     args = parser.parse_args()
     if not (args.find_offset_of or args.within):
         parser.error("Please input audio files")

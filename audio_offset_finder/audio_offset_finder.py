@@ -17,6 +17,8 @@
 from subprocess import Popen, PIPE
 from scipy.io import wavfile
 # from scikits.talkbox.features.mfcc import mfcc
+import matplotlib.pyplot as plt
+import librosa.display
 import librosa
 import os, tempfile, warnings
 import numpy as np
@@ -25,7 +27,17 @@ def mfcc(audio, nwin=256, nfft=512, fs=8000, nceps=13):
     #return librosa.feature.mfcc(y=audio, sr=44100, hop_length=nwin, n_mfcc=nceps)
     return [np.transpose(librosa.feature.mfcc(y=audio, sr=fs, n_fft=nfft, win_length=nwin,n_mfcc=nceps))]
 
+def add_feature(mfcc1, rmsa1):
+    tmfcc1 = np.zeros((mfcc1.shape[0],mfcc1.shape[1]+rmsa1.shape[0]))
+    n = mfcc1.shape[0]
+    m = mfcc1.shape[1]
+    w = rmsa1.shape[0]
+    tmfcc1[0:n,0:m] = mfcc1[0:n,0:m]
+    tmfcc1[0:n,m:m+w]   = np.transpose(rmsa1[0:w,0:n])
+    return tmfcc1
+
 def find_offset(file1, file2, fs=8000, trim=60*15, correl_nframes=1000):
+    sr = fs
     tmp1 = convert_and_trim(file1, fs, trim)
     tmp2 = convert_and_trim(file2, fs, trim)
     # Removing warnings because of 18 bits block size
@@ -38,17 +50,68 @@ def find_offset(file1, file2, fs=8000, trim=60*15, correl_nframes=1000):
     # (only seems to happen in ffmpeg, not in sox)
     a1 = ensure_non_zero(a1)
     a2 = ensure_non_zero(a2)
-    mfcc1 = mfcc(a1, nwin=256, nfft=512, fs=fs, nceps=13)[0]
-    print(mfcc1.shape)
-    mfcc2 = mfcc(a2, nwin=256, nfft=512, fs=fs, nceps=13)[0]
+    print(a1.shape)
+    print(a2.shape)
+    mfcc1 = mfcc(a1, nwin=256, nfft=512, fs=fs, nceps=26)[0]
+    mfcc2 = mfcc(a2, nwin=256, nfft=512, fs=fs, nceps=26)[0]
     mfcc1 = std_mfcc(mfcc1)
     mfcc2 = std_mfcc(mfcc2)
+    rmsa1 = librosa.feature.rms(a1)
+    rmsa2 = librosa.feature.rms(a2)
+    cent1 = librosa.feature.spectral_centroid(y=a1, sr=fs)
+    cent2 = librosa.feature.spectral_centroid(y=a2, sr=fs)
+    rolloff1 = librosa.feature.spectral_rolloff(y=a1, sr=fs, roll_percent=0.1)
+    rolloff2 = librosa.feature.spectral_rolloff(y=a2, sr=fs, roll_percent=0.1)
+    chroma_cq1 = librosa.feature.chroma_cqt(y=a1, sr=fs, n_chroma=10)
+    chroma_cq2 = librosa.feature.chroma_cqt(y=a2, sr=fs, n_chroma=10)
+    
+    onset_env1 = librosa.onset.onset_strength(y=a1, sr=sr)
+    onset_env2 = librosa.onset.onset_strength(y=a2, sr=sr)
+    pulse1 = librosa.beat.plp(onset_envelope=onset_env1, sr=sr)
+    pulse2 = librosa.beat.plp(onset_envelope=onset_env2, sr=sr)
+
+    print(mfcc1.shape)
+    print(mfcc2.shape)
+
+    mfcc1 = add_feature(mfcc1, rmsa1)
+    #mfcc1 = add_feature(mfcc1, rolloff1)
+    #mfcc1 = add_feature(mfcc1, cent1)
+    mfcc1 = add_feature(mfcc1, chroma_cq1)
+    mfcc1 = add_feature(mfcc1, onset_env1.reshape(1,onset_env1.shape[0]))
+    mfcc1 = add_feature(mfcc1, pulse1.reshape(1,onset_env1.shape[0]))
+
+    mfcc2 = add_feature(mfcc2, rmsa2)
+    #mfcc2 = add_feature(mfcc2, rolloff2)
+    #mfcc2 = add_feature(mfcc2, cent2)
+    mfcc2 = add_feature(mfcc2, chroma_cq2)
+    mfcc2 = add_feature(mfcc2, onset_env2.reshape(1,onset_env2.shape[0]))
+    mfcc2 = add_feature(mfcc2, pulse2.reshape(1,onset_env2.shape[0]))
+
+    print(mfcc1.shape)
+    print(mfcc2.shape)
+
     c = cross_correlation(mfcc1, mfcc2, nframes=correl_nframes)
-    print(np.arange(0,c.shape[0])[c > 1300])
+
+
+    #print(np.arange(0,c.shape[0])[c > 1300])
     max_k_index = np.argmax(c)
-    # The MFCC window overlap is hardcoded in scikits.talkbox
-    offset = max_k_index * 160.0 / float(fs) # * over / sample rate
+    # # The MFCC window overlap is hardcoded in scikits.talkbox
+    # # offset = max_k_index * 160.0 / float(fs) # * over / sample rate
+    offset = max_k_index * (a1.shape[0]/rmsa1.shape[1]) / float(fs) # * over / sample rate
+    print(max_k_index)
     score = (c[max_k_index] - np.mean(c)) / np.std(c) # standard score of peak
+
+    print(c.shape)
+    #c2 = librosa.segment.cross_similarity(np.transpose(mfcc1), np.transpose(mfcc2), metric='cosine')
+    #print(c2.shape)
+
+    plt.figure(figsize=(8, 4))
+    plt.plot(c)
+    plt.show()
+    #librosa.display.specshow(c2, x_axis='time', y_axis='time', hop_length=512)
+    #plt.title('Binary recurrence (symmetric)')
+    #plt.tight_layout()
+    #plt.show()
     os.remove(tmp1)
     os.remove(tmp2)
     return offset, score
@@ -60,6 +123,18 @@ def ensure_non_zero(signal):
     signal += np.random.random(len(signal)) * 10**-10
     return signal
 
+def make_similar_shape(mfcc1,mfcc2):
+    n1, mdim1 = mfcc1.shape
+    n2, mdim2 = mfcc2.shape
+    # print((nframes,(n1,mdim1),(n2,mdim2)))
+    if (n2 < n1):
+        t = np.zeros((n1,mdim2))
+        t[0:n2,0:mdim2] = mfcc2[0:n2,0:mdim2]
+        mfcc2 = t
+    elif (n2 > n1):
+        return make_similar_shape(mfcc2,mfcc1)
+    return (mfcc1,mfcc2)
+
 def cross_correlation(mfcc1, mfcc2, nframes):
     n1, mdim1 = mfcc1.shape
     n2, mdim2 = mfcc2.shape
@@ -69,10 +144,12 @@ def cross_correlation(mfcc1, mfcc2, nframes):
         t[0:n2,0:mdim2] = mfcc2[0:n2,0:mdim2]
         mfcc2 = t
     n = n1 - nframes + 1
-    c = np.ones(n)
+    #c = np.zeros(min(n2,n))
+    c = np.zeros(n)
+    #for k in range(min(n2,n)):
     for k in range(n):
         cc = np.sum(np.multiply(mfcc1[k:k+nframes], mfcc2[:nframes]), axis=0)
-        c[k] = np.linalg.norm(cc)
+        c[k] = np.linalg.norm(cc,1)
     return c
 
 def std_mfcc(mfcc):
