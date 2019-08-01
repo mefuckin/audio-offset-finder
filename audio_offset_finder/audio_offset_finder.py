@@ -36,7 +36,7 @@ def add_feature(mfcc1, rmsa1):
     tmfcc1[0:n,m:m+w]   = np.transpose(rmsa1[0:w,0:n])
     return tmfcc1
 
-def find_offset(file1, file2, fs=8000, trim=60*15, correl_nframes=1000):
+def find_offset(file1, file2, fs=8000, trim=60*15, correl_nframes=1000, plotit=True):
     sr = fs
     tmp1 = convert_and_trim(file1, fs, trim)
     tmp2 = convert_and_trim(file2, fs, trim)
@@ -50,8 +50,7 @@ def find_offset(file1, file2, fs=8000, trim=60*15, correl_nframes=1000):
     # (only seems to happen in ffmpeg, not in sox)
     a1 = ensure_non_zero(a1)
     a2 = ensure_non_zero(a2)
-    print(a1.shape)
-    print(a2.shape)
+    print("Ref samples: %s Find samples: %s" % (a1.shape[0],a2.shape[0]))
     mfcc1 = mfcc(a1, nwin=256, nfft=512, fs=fs, nceps=26)[0]
     mfcc2 = mfcc(a2, nwin=256, nfft=512, fs=fs, nceps=26)[0]
     mfcc1 = std_mfcc(mfcc1)
@@ -70,50 +69,35 @@ def find_offset(file1, file2, fs=8000, trim=60*15, correl_nframes=1000):
     pulse1 = librosa.beat.plp(onset_envelope=onset_env1, sr=sr)
     pulse2 = librosa.beat.plp(onset_envelope=onset_env2, sr=sr)
 
-    print(mfcc1.shape)
-    print(mfcc2.shape)
 
     mfcc1 = add_feature(mfcc1, rmsa1)
-    #mfcc1 = add_feature(mfcc1, rolloff1)
-    #mfcc1 = add_feature(mfcc1, cent1)
+    mfcc1 = add_feature(mfcc1, rolloff1/fs)
+    mfcc1 = add_feature(mfcc1, cent1/fs)
     mfcc1 = add_feature(mfcc1, chroma_cq1)
     mfcc1 = add_feature(mfcc1, onset_env1.reshape(1,onset_env1.shape[0]))
     mfcc1 = add_feature(mfcc1, pulse1.reshape(1,onset_env1.shape[0]))
 
     mfcc2 = add_feature(mfcc2, rmsa2)
-    #mfcc2 = add_feature(mfcc2, rolloff2)
-    #mfcc2 = add_feature(mfcc2, cent2)
+    mfcc2 = add_feature(mfcc2, rolloff2/fs)
+    mfcc2 = add_feature(mfcc2, cent2/fs)
     mfcc2 = add_feature(mfcc2, chroma_cq2)
     mfcc2 = add_feature(mfcc2, onset_env2.reshape(1,onset_env2.shape[0]))
     mfcc2 = add_feature(mfcc2, pulse2.reshape(1,onset_env2.shape[0]))
 
-    print(mfcc1.shape)
-    print(mfcc2.shape)
-
     c = cross_correlation(mfcc1, mfcc2, nframes=correl_nframes)
 
-
-    #print(np.arange(0,c.shape[0])[c > 1300])
     max_k_index = np.argmax(c)
     # # The MFCC window overlap is hardcoded in scikits.talkbox
     # # offset = max_k_index * 160.0 / float(fs) # * over / sample rate
     offset = max_k_index * (a1.shape[0]/rmsa1.shape[1]) / float(fs) # * over / sample rate
-    print(max_k_index)
+    print("Best matching window: %s" % max_k_index)
     score = (c[max_k_index] - np.mean(c)) / np.std(c) # standard score of peak
-
-    print(c.shape)
-    #c2 = librosa.segment.cross_similarity(np.transpose(mfcc1), np.transpose(mfcc2), metric='cosine')
-    #print(c2.shape)
-
-    plt.figure(figsize=(8, 4))
-    plt.plot(c)
-    plt.show()
-    #librosa.display.specshow(c2, x_axis='time', y_axis='time', hop_length=512)
-    #plt.title('Binary recurrence (symmetric)')
-    #plt.tight_layout()
-    #plt.show()
     os.remove(tmp1)
     os.remove(tmp2)
+    if plotit:
+        plt.figure(figsize=(8, 4))
+        plt.plot(c)
+        plt.show()
     return offset, score
 
 def ensure_non_zero(signal):
