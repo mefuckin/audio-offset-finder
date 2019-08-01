@@ -20,17 +20,17 @@ from setuptools import setup
 
 setup(
     name='audio-offset-finder',
-    version='0.3.0',
+    version='0.4.0',
     description='Find the offset of an audio file within another audio file',
-    author='Yves Raimond',
-    author_email='yves.raimond@bbc.co.uk',
+    author='Abram Hindle and Yves Raimond',
+    author_email='hindle1@ualberta.ca and yves.raimond@bbc.co.uk',
     url='https://github.com/bbcrd/audio-offset-finder',
     license='Apache License 2.0',
     packages=['audio_offset_finder'],
     install_requires=[
         'scipy>=0.12.0',
         'numpy',
-        'scikits.talkbox', 
+        'librosa'
     ],
     scripts=['bin/audio-offset-finder'],
 )

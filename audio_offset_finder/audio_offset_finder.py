@@ -41,8 +41,8 @@ def find_offset(file1, file2, fs=8000, trim=60*15, correl_nframes=1000):
     mfcc1 = mfcc(a1, nwin=256, nfft=512, fs=fs, nceps=13)[0]
     print(mfcc1.shape)
     mfcc2 = mfcc(a2, nwin=256, nfft=512, fs=fs, nceps=13)[0]
-    #mfcc1 = std_mfcc(mfcc1)
-    #mfcc2 = std_mfcc(mfcc2)
+    mfcc1 = std_mfcc(mfcc1)
+    mfcc2 = std_mfcc(mfcc2)
     c = cross_correlation(mfcc1, mfcc2, nframes=correl_nframes)
     print(np.arange(0,c.shape[0])[c > 1300])
     max_k_index = np.argmax(c)
