@@ -16,9 +16,14 @@
 
 from subprocess import Popen, PIPE
 from scipy.io import wavfile
-from scikits.talkbox.features.mfcc import mfcc
+# from scikits.talkbox.features.mfcc import mfcc
+import librosa
 import os, tempfile, warnings
 import numpy as np
+
+def mfcc(audio, nwin=256, nfft=512, fs=8000, nceps=13):
+    #return librosa.feature.mfcc(y=audio, sr=44100, hop_length=nwin, n_mfcc=nceps)
+    return [np.transpose(librosa.feature.mfcc(y=audio, sr=fs, n_fft=nfft, win_length=nwin,n_mfcc=nceps))]
 
 def find_offset(file1, file2, fs=8000, trim=60*15, correl_nframes=1000):
     tmp1 = convert_and_trim(file1, fs, trim)
@@ -34,10 +39,12 @@ def find_offset(file1, file2, fs=8000, trim=60*15, correl_nframes=1000):
     a1 = ensure_non_zero(a1)
     a2 = ensure_non_zero(a2)
     mfcc1 = mfcc(a1, nwin=256, nfft=512, fs=fs, nceps=13)[0]
+    print(mfcc1.shape)
     mfcc2 = mfcc(a2, nwin=256, nfft=512, fs=fs, nceps=13)[0]
-    mfcc1 = std_mfcc(mfcc1)
-    mfcc2 = std_mfcc(mfcc2)
+    #mfcc1 = std_mfcc(mfcc1)
+    #mfcc2 = std_mfcc(mfcc2)
     c = cross_correlation(mfcc1, mfcc2, nframes=correl_nframes)
+    print(np.arange(0,c.shape[0])[c > 1300])
     max_k_index = np.argmax(c)
     # The MFCC window overlap is hardcoded in scikits.talkbox
     offset = max_k_index * 160.0 / float(fs) # * over / sample rate
@@ -56,8 +63,13 @@ def ensure_non_zero(signal):
 def cross_correlation(mfcc1, mfcc2, nframes):
     n1, mdim1 = mfcc1.shape
     n2, mdim2 = mfcc2.shape
+    # print((nframes,(n1,mdim1),(n2,mdim2)))
+    if (n2 < nframes):
+        t = np.zeros((nframes,mdim2))
+        t[0:n2,0:mdim2] = mfcc2[0:n2,0:mdim2]
+        mfcc2 = t
     n = n1 - nframes + 1
-    c = np.zeros(n)
+    c = np.ones(n)
     for k in range(n):
         cc = np.sum(np.multiply(mfcc1[k:k+nframes], mfcc2[:nframes]), axis=0)
         c[k] = np.linalg.norm(cc)
