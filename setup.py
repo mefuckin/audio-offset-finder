@@ -3,6 +3,7 @@
 # offset-finder
 #
 # Copyright (c) 2014 British Broadcasting Corporation
+# Copyright (c) 2019 Abram Hindle
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,9 +23,9 @@ setup(
     name='audio-offset-finder',
     version='0.4.0',
     description='Find the offset of an audio file within another audio file',
-    author='Abram Hindle and Yves Raimond',
-    author_email='hindle1@ualberta.ca and yves.raimond@bbc.co.uk',
-    url='https://github.com/bbcrd/audio-offset-finder',
+    author='Yves Raimond and Abram Hindle',
+    author_email='yves.raimond@bbc.co.uk and hindle1@ualberta.ca',
+    url='https://github.com/abramhindle/audio-offset-finder',
     license='Apache License 2.0',
     packages=['audio_offset_finder'],
     install_requires=[
