@@ -1,6 +1,7 @@
 # audio-offset-finder
 #
 # Copyright (c) 2014 British Broadcasting Corporation
+# Copyright (c) 2018 Abram Hindle
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,12 +19,11 @@ from subprocess import Popen, PIPE
 from scipy.io import wavfile
 # from scikits.talkbox.features.mfcc import mfcc
 import matplotlib.pyplot as plt
-import librosa.display
 import librosa
 import os, tempfile, warnings
 import numpy as np
 
-def mfcc(audio, nwin=256, nfft=512, fs=8000, nceps=13):
+def mfcc(audio, nwin=256, nfft=512, fs=16000, nceps=13):
     #return librosa.feature.mfcc(y=audio, sr=44100, hop_length=nwin, n_mfcc=nceps)
     return [np.transpose(librosa.feature.mfcc(y=audio, sr=fs, n_fft=nfft, win_length=nwin,n_mfcc=nceps))]
 

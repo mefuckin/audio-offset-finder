@@ -3,6 +3,7 @@
 # audio-offset-finder
 #
 # Copyright (c) 2014 British Broadcasting Corporation
+# Copyright (c) 2018 Abram Hindle
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +18,7 @@
 # limitations under the License.
 
 from audio_offset_finder.audio_offset_finder import find_offset
-import argparse, sys
+import argparse, sys, os
 
 def main():
     parser = argparse.ArgumentParser(
@@ -29,12 +30,17 @@ def main():
     parser.add_argument('--sr', metavar='sample rate', type=int, default=16000, help='Target sample rate during downsampling')
     parser.add_argument('--trim', metavar='seconds', type=int, default=60*30, help='Only uses first n seconds of audio files')
     parser.add_argument('--plotit',action='store_true', help='Plot the correlation function')
+    parser.add_argument('--ffmpeg',action='store_true', help='Run FFMPEG and make a synced copy')
     args = parser.parse_args()
     if not (args.find_offset_of or args.within):
         parser.error("Please input audio files")
     offset, score = find_offset(args.within, args.find_offset_of, args.sr, args.trim, plotit=args.plotit)
     print("Offset: %s (seconds)" % str(offset))
     print("Standard score: %s" % str(score))
+    ffmpeg_cmd = "ffmpeg -i '%s' -ss  '%s' -i %s -map 0:v -map 1:a  -c copy -shortest '%s.sync.mkv'" % (args.find_offset_of, offset, args.within, args.find_offset_of)
+    print(ffmpeg_cmd)
+    if (args.ffmpeg):
+        os.system(ffmpeg_cmd)
 
 if __name__ == '__main__':
     main()
