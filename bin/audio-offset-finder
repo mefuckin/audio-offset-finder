@@ -37,7 +37,7 @@ def main():
     offset, score = find_offset(args.within, args.find_offset_of, args.sr, args.trim, plotit=args.plotit)
     print("Offset: %s (seconds)" % str(offset))
     print("Standard score: %s" % str(score))
-    ffmpeg_cmd = "ffmpeg -i '%s' -ss  '%s' -i %s -map 0:v -map 1:a  -c copy -shortest '%s.sync.mkv'" % (args.find_offset_of, offset, args.within, args.find_offset_of)
+    ffmpeg_cmd = "ffmpeg -i '%s' -ss  '%s' -i %s -map 0:v -map 1:a  -c copy -shortest '%s.sync.%s.mkv'" % (args.find_offset_of, offset, args.within, args.find_offset_of, ("{:.2f}".format(offset)))
     print(ffmpeg_cmd)
     if (args.ffmpeg):
         os.system(ffmpeg_cmd)
