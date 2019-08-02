@@ -18,7 +18,7 @@ I've also allowed remixing of videos with the --ffmpeg flag
 Installation
 ------------
 
-    $ pip install audio-offset-finder
+    $ pip3 install --user git+https://github.com/abramhindle/audio-offset-finder.git
 
 Usage
 -----
