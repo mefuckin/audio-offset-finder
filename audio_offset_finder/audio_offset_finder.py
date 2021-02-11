@@ -76,7 +76,7 @@ def get_audio(file, sr=16000):
 def find_offset(scope, target, pre_offset=0, sr=16000, trim=60 * 15, correl_nframes=1000, plotit=True):
 
     # 子音频在母音频中找偏移值
-    # Here, we call the scope-audio as moth-audio,
+    # Here, we call the scope-audio as mother-audio,
     # and the target-audio as child-audio,
     # easier to understand the relationship of these two audios.
 
