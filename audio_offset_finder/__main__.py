@@ -62,7 +62,7 @@ audio file (scope), and replace the video sound automaticlly.
     parser.add_argument('--offset', metavar='Minutes', type=int, default=0, help='Neglect how many minutes of the audio (in case your audio is very long)')
     parser.add_argument('--trim', metavar='Minutes', type=int, default=15, help='Using how many minutes of audio as one clip to analyse with')
     parser.add_argument('--sr', metavar='SampleRate', type=int, default=16000, help='When resample audio, what the target sample rate should be')
-    parser.add_argument('--format', metavar='Format', type=str, default='mp4', help='Output audio format such as: mp4, mkv')
+    parser.add_argument('--format', metavar='Format', type=str, default='mkv', help='Output video format such as: mp4, mkv')
     parser.add_argument('--not-generate',action='store_true', help='Do not use FFmpeg to generate new video')
     parser.add_argument('--plotit',action='store_true', help='Show the plot picture of the analyse')
 
