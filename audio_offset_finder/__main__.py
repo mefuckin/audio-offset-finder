@@ -100,10 +100,10 @@ def sync(within, find_offset_of, offset, trim, sr, format, not_generate, plotit)
 
     # ffmpeg command
     if offset >= 0:
-        ffmpeg_cmd = f'''ffmpeg -y -hide_banner -i "{find_offset_of}" -ss {offset} -i "{within}" -map 0:v:0 -map 1:a:0  -c:v copy -shortest "{find_offset_of}.sync.{"{:.2f}".format(offset)}.{format}"'''
+        ffmpeg_cmd = f'''ffmpeg -y -hide_banner -i "{find_offset_of}" -ss {offset} -i "{within}" -map 0:v:0 -map 1:a:0 -c:v copy -c:a copy -shortest "{find_offset_of}.sync.{"{:.2f}".format(offset)}.{format}"'''
     else:
         delay = int(abs(offset) * 1000)
-        ffmpeg_cmd = f'''ffmpeg -y -hide_banner -i "{find_offset_of}" -i "{within}" -map 0:v:0 -map 1:a:0 -c:v copy -af "adelay=delays={delay}:all=1" -shortest "{find_offset_of}.sync.{"{:.2f}".format(offset)}.{format}"'''
+        ffmpeg_cmd = f'''ffmpeg -y -hide_banner -i "{find_offset_of}" -i "{within}" -map 0:v:0 -map 1:a:0 -c:v copy -c:a copy -af "adelay=delays={delay}:all=1" -shortest "{find_offset_of}.sync.{"{:.2f}".format(offset)}.{format}"'''
     print(f'FFmpeg command：\n    {ffmpeg_cmd}\n')
 
     # Generate new video
